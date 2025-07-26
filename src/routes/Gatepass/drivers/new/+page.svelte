@@ -1,10 +1,9 @@
-<script>
-  import PocketBase from 'pocketbase';
+<script lang="ts">
+  import { pb } from '$lib/stores/session.js';
   let form = { full_name: '', id_number: '', phone_number: '' };
   let loading = false;
   let error = '';
   let success = false;
-  const pb = new PocketBase('https://odds.pockethost.io');
 
   async function submit() {
     loading = true;
@@ -19,7 +18,7 @@
       await pb.collection('driver_profile').create(data);
       success = true;
       form = { full_name: '', id_number: '', phone_number: '' };
-    } catch (e) {
+    } catch (e: any) {
       error = e?.message || 'Failed to create driver.';
     } finally {
       loading = false;

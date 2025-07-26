@@ -1,9 +1,7 @@
 <script>
 import { onMount } from 'svelte';
-import PocketBase from 'pocketbase';
+import { pb } from '$lib/stores/session.js';
 import { getDriverById, getVehicleById } from '../pocketbase.js';
-
-const pb = new PocketBase('https://odds.pockethost.io');
 
 let gatepasses = [];
 let error = '';

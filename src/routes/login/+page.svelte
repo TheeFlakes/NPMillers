@@ -1,10 +1,7 @@
 <!-- src/routes/login/+page.svelte -->
 <script>
-    import PocketBase from 'pocketbase';
     import { goto } from '$app/navigation';
-    import { invalidate } from '$app/navigation';
-    
-    const pb = new PocketBase('https://odds.pockethost.io');
+    import { session } from '$lib/stores/session.js';
     
     let email = '';
     let password = '';
@@ -19,25 +16,23 @@
         success = '';
         
         try {
-            // Authenticate user
-            const authData = await pb.collection('users').authWithPassword(email, password);
+            // Use the session store to login
+            const result = await session.login(email, password, rememberMe);
             
-            // If remember me is checked, store the token in localStorage
-            if (rememberMe) {
-                localStorage.setItem('pocketbase_auth', JSON.stringify(pb.authStore.export()));
-            }
-            // Determine redirect based on user role
-            let redirectPath = '/dashboard';
-            if (authData?.record?.role === 'clerk') {
-                redirectPath = '/Gatepass';
-                success = '🛂 Login successful! Welcome, Clerk. Redirecting you to the Gatepass...';
+            if (result.success) {
+                // Determine redirect based on user role
+                let redirectPath = '/dashboard';
+                if (result.user?.role === 'clerk') {
+                    redirectPath = '/Gatepass';
+                    success = '🛂 Login successful! Welcome, Clerk. Redirecting you to the Gatepass...';
+                } else {
+                    success = '🎉 Login successful! Welcome back, superstar! Redirecting you to your dashboard...';
+                }
+                // Redirect to the appropriate page after a short delay
+                setTimeout(() => goto(redirectPath), 1200);
             } else {
-                success = '🎉 Login successful! Welcome back, superstar! Redirecting you to your dashboard...';
+                throw result.error;
             }
-            // Refresh the page to update auth state
-            await invalidate('pb_auth');
-            // Redirect to the appropriate page after a short delay
-            setTimeout(() => goto(redirectPath), 1200);
         } catch (err) {
             console.error('Login failed:', err);
             if (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'code' in err.response && err.response.code === 400) {

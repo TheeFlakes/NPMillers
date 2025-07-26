@@ -1,6 +1,4 @@
-import PocketBase from 'pocketbase';
-
-const pb = new PocketBase('https://odds.pockethost.io');
+import { pb } from '$lib/stores/session.js';
 
 // Authenticate (for demo, use static credentials)
 export async function authenticate() {
