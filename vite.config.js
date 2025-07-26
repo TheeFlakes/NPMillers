@@ -10,6 +10,9 @@ export default defineConfig({
 		}
 	},
 	optimizeDeps: {
-		exclude: ['@rollup/rollup-linux-x64-gnu']
+		exclude: ['@rollup/rollup-linux-x64-gnu', 'lightningcss']
+	},
+	ssr: {
+		noExternal: ['lightningcss']
 	}
 });
