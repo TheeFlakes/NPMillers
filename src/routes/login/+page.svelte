@@ -2,6 +2,7 @@
 <script>
     import { goto } from '$app/navigation';
     import { session } from '$lib/stores/session.js';
+    import { page } from '$app/stores';
     
     let email = '';
     let password = '';
@@ -20,14 +21,22 @@
             const result = await session.login(email, password, rememberMe);
             
             if (result.success) {
-                // Determine redirect based on user role
-                let redirectPath = '/dashboard';
-                if (result.user?.role === 'clerk') {
-                    redirectPath = '/Gatepass';
-                    success = '🛂 Login successful! Welcome, Clerk. Redirecting you to the Gatepass...';
+                // Check for redirect parameter first
+                const redirectParam = $page.url.searchParams.get('redirect');
+                let redirectPath = redirectParam || '/dashboard';
+                
+                // If no redirect param, determine based on user role
+                if (!redirectParam) {
+                    if (result.user?.role === 'clerk') {
+                        redirectPath = '/Gatepass';
+                        success = '🛂 Login successful! Welcome, Clerk. Redirecting you to the Gatepass...';
+                    } else {
+                        success = '🎉 Login successful! Welcome back, superstar! Redirecting you to your dashboard...';
+                    }
                 } else {
-                    success = '🎉 Login successful! Welcome back, superstar! Redirecting you to your dashboard...';
+                    success = '🎉 Login successful! Redirecting you to your requested page...';
                 }
+                
                 // Redirect to the appropriate page after a short delay
                 setTimeout(() => goto(redirectPath), 1200);
             } else {

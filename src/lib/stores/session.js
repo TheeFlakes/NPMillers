@@ -19,7 +19,7 @@ function createSessionStore() {
         if (savedAuth) {
             try {
                 const authData = JSON.parse(savedAuth);
-                pb.authStore.loadFromJson(authData);
+                pb.authStore.loadFromCookie(authData);
                 
                 if (pb.authStore.isValid) {
                     set({
@@ -63,7 +63,12 @@ function createSessionStore() {
                 const authData = await pb.collection('users').authWithPassword(email, password);
                 
                 if (rememberMe) {
-                    localStorage.setItem('pocketbase_auth', JSON.stringify(pb.authStore.export()));
+                    localStorage.setItem('pocketbase_auth', JSON.stringify(pb.authStore.exportToCookie()));
+                }
+                
+                // Set cookie for server-side authentication
+                if (browser) {
+                    document.cookie = `pb_auth=${pb.authStore.exportToCookie()}; path=/; max-age=${rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60}; SameSite=Strict`;
                 }
                 
                 set({
@@ -84,6 +89,11 @@ function createSessionStore() {
             try {
                 pb.authStore.clear();
                 localStorage.removeItem('pocketbase_auth');
+                
+                // Clear cookie for server-side authentication
+                if (browser) {
+                    document.cookie = 'pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+                }
                 
                 set({
                     user: null,

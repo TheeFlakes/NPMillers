@@ -1,132 +1,64 @@
-# Session Store
+# Authentication System
 
-This session store manages user authentication state throughout the application.
+This application uses a comprehensive authentication system with both server-side and client-side route protection.
 
-## Features
+## Components
 
-- **Centralized Authentication**: Single source of truth for user authentication state
-- **Session Persistence**: Automatically saves and restores authentication from localStorage
-- **TypeScript Support**: Full type safety for authentication data
-- **Easy Integration**: Simple API for login, logout, and session checking
+### 1. Session Store (`session.js`)
+- Manages authentication state using Svelte stores
+- Handles login/logout operations
+- Stores user data and authentication status
+- Manages both localStorage and cookies for persistence
+
+### 2. Server Hook (`hooks.server.js`)
+- Provides server-side route protection
+- Validates authentication before routes are rendered
+- Handles redirects for unauthenticated users
+- Prevents authenticated users from accessing login page
+
+### 3. Navigation Guard (`NavigationGuard.svelte`)
+- Provides client-side route protection
+- Monitors route changes and authentication state
+- Handles client-side redirects
+- Works alongside server hooks for comprehensive protection
+
+### 4. Auth Guard (`AuthGuard.svelte`)
+- Component-level protection for specific routes
+- Shows loading states during authentication checks
+- Renders protected content only when authenticated
+
+## Route Protection
+
+### Protected Routes
+- `/Gatepass/*` - All Gatepass-related routes
+- `/dashboard` - Main dashboard
+- `/admin` - Admin panel
+
+### Public Routes
+- `/` - Home page
+- `/login` - Login page
+- `/forgot-password` - Password recovery
+- `/register` - User registration
+
+## How It Works
+
+1. **Server-Side Protection**: The `hooks.server.js` file intercepts all requests and checks authentication before rendering routes.
+
+2. **Client-Side Protection**: The `NavigationGuard.svelte` component monitors route changes and ensures users can't navigate to protected routes without authentication.
+
+3. **Component-Level Protection**: The `AuthGuard.svelte` component provides additional protection for specific components.
+
+4. **Authentication Flow**:
+   - User attempts to access protected route
+   - Server hook checks authentication
+   - If not authenticated, redirects to login with return URL
+   - After successful login, user is redirected to originally requested page
 
 ## Usage
 
-### Import the session store
+The authentication system is automatically applied to all routes. No additional configuration is needed for basic protection.
 
-```javascript
-import { session, pb } from '$lib/stores/session.js';
-// or
-import { session, pb } from '$lib/index.js';
-```
-
-### Login
-
-```javascript
-const result = await session.login(email, password, rememberMe);
-if (result.success) {
-  // User is now logged in
-  console.log('Logged in user:', result.user);
-} else {
-  // Handle login error
-  console.error('Login failed:', result.error);
-}
-```
-
-### Logout
-
-```javascript
-const result = await session.logout();
-if (result.success) {
-  // User is now logged out
-  // Redirect to login page
-  goto('/login');
-}
-```
-
-### Check Authentication Status
-
-```javascript
-// Check if user is currently authenticated
-const isAuthenticated = session.isAuthenticated();
-
-// Get current user data
-const user = session.getUser();
-```
-
-### Subscribe to Session Changes
-
-```javascript
-import { session } from '$lib/stores/session.js';
-
-// Subscribe to session changes
-session.subscribe((sessionData) => {
-  console.log('Session updated:', sessionData);
-  // sessionData.user - current user object
-  // sessionData.isAuthenticated - boolean
-  // sessionData.isLoading - boolean
-});
-```
-
-### Using in Svelte Components
-
-```svelte
-<script>
-  import { session } from '$lib/stores/session.js';
-  
-  // Subscribe to session store
-  $: user = $session.user;
-  $: isAuthenticated = $session.isAuthenticated;
-</script>
-
-{#if isAuthenticated}
-  <p>Welcome, {user.email}!</p>
-{:else}
-  <p>Please log in</p>
-{/if}
-```
-
-## PocketBase Instance
-
-The store also exports a centralized PocketBase instance that should be used throughout the application:
-
-```javascript
-import { pb } from '$lib/stores/session.js';
-
-// Use the centralized PocketBase instance
-const records = await pb.collection('your_collection').getList();
-```
-
-## Authentication Guard Component
-
-Use the `AuthGuard` component to protect routes that require authentication:
-
-```svelte
-<script>
-  import AuthGuard from '$lib/components/AuthGuard.svelte';
-</script>
-
-<AuthGuard>
-  <!-- Your protected content here -->
-  <h1>Protected Page</h1>
-</AuthGuard>
-```
-
-## Session Persistence
-
-The session store automatically:
-- Saves authentication data to localStorage when "Remember Me" is checked
-- Restores authentication on page reload
-- Clears invalid authentication data
-- Handles token expiration
-
-## Error Handling
-
-All session store methods return objects with a `success` boolean and optional `error` property:
-
-```javascript
-const result = await session.login(email, password);
-if (!result.success) {
-  // Handle error
-  console.error('Authentication error:', result.error);
-}
-``` 
+For custom route protection, you can:
+1. Add routes to the `protectedRoutes` array in both `hooks.server.js` and `NavigationGuard.svelte`
+2. Use the `AuthGuard` component around specific content
+3. Access user data via the session store: `import { session } from '$lib/stores/session.js'` 
