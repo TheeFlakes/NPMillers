@@ -1,14 +1,10 @@
-import { pb } from '$lib/stores/session.js';
+import PocketBase from 'pocketbase';
 
-// Authenticate (for demo, use static credentials)
-export async function authenticate() {
-  if (!pb.authStore.isValid) {
-    await pb.collection('users').authWithPassword('test@example.com', '123456');
-  }
-}
+const pb = new PocketBase('https://odds.pockethost.io');
+
+export { pb };
 
 export async function getDrivers(page = 1, perPage = 50) {
-  await authenticate();
   const result = await pb.collection('driver_profile').getList(page, perPage, { sort: '-created' });
   return result.items.map((d) => ({
     id: d.id,
@@ -22,7 +18,6 @@ export async function getDrivers(page = 1, perPage = 50) {
  * @param {string} id
  */
 export async function getDriverById(id) {
-  await authenticate();
   return await pb.collection('driver_profile').getOne(id);
 }
 
@@ -32,7 +27,6 @@ export async function getDriverById(id) {
  * @param {number} [perPage]
  */
 export async function searchDrivers(query, page = 1, perPage = 50) {
-  await authenticate();
   // Search by name, id_no, or phone_no
   const filter = `name ~ "${query}" || id_no ~ "${query}" || phone_no ~ "${query}"`;
   const result = await pb.collection('driver_profile').getList(page, perPage, { filter });
@@ -48,7 +42,6 @@ export async function searchDrivers(query, page = 1, perPage = 50) {
  * @param {Object} data
  */
 export async function createDriver(data) {
-  await authenticate();
   return await pb.collection('driver_profile').create(data);
 }
 
@@ -57,7 +50,6 @@ export async function createDriver(data) {
  * @param {Object} data
  */
 export async function updateDriver(id, data) {
-  await authenticate();
   return await pb.collection('driver_profile').update(id, data);
 }
 
@@ -65,7 +57,6 @@ export async function updateDriver(id, data) {
  * @param {string} id
  */
 export async function deleteDriver(id) {
-  await authenticate();
   return await pb.collection('driver_profile').delete(id);
 }
 
@@ -73,7 +64,6 @@ export async function deleteDriver(id) {
  * @param {Object} data
  */
 export async function createGatepass(data) {
-  await authenticate();
   return await pb.collection('gatepasses').create(data);
 }
 
@@ -81,7 +71,6 @@ export async function createGatepass(data) {
  * Fetch vehicles from PocketBase
  */
 export async function getVehicles(page = 1, perPage = 50) {
-  await authenticate();
   const result = await pb.collection('vehicles').getList(page, perPage, { sort: '-created' });
   return result.items.map((v) => ({
     id: v.id,
@@ -95,7 +84,6 @@ export async function getVehicles(page = 1, perPage = 50) {
  * @param {string} id
  */
 export async function getVehicleById(id) {
-  await authenticate();
   return await pb.collection('vehicles').getOne(id);
 }
 
@@ -108,7 +96,6 @@ let driverUnsubscribe = null;
  * @param {(e: any) => void} callback
  */
 export async function subscribeToDrivers(callback) {
-  await authenticate();
   if (driverUnsubscribe) driverUnsubscribe();
   driverUnsubscribe = await pb.collection('driver_profile').subscribe('*', callback);
 }

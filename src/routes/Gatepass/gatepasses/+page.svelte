@@ -1,20 +1,20 @@
-<script>
+<script lang="ts">
 import { onMount } from 'svelte';
 import { pb } from '$lib/stores/session.js';
 import { getDriverById, getVehicleById } from '../pocketbase.js';
 
-let gatepasses = [];
+let gatepasses: any[] = [];
 let error = '';
-let enrichedGatepasses = [];
+let enrichedGatepasses: any[] = [];
 let search = '';
 let page = 1;
-let perPage = 6;
+let perPage = 2; // Changed from 6 to 2
 let totalPages = 1;
 let totalItems = 0;
 let loading = false;
 
-async function enrichGatepasses(gatepasses) {
-    return await Promise.all(gatepasses.map(async (g) => {
+async function enrichGatepasses(gatepasses: any[]) {
+    return await Promise.all(gatepasses.map(async (g: any) => {
         let driver = null;
         let vehicle = null;
         try {
@@ -47,19 +47,24 @@ async function fetchGatepasses() {
         totalPages = result.totalPages;
         totalItems = result.totalItems;
         enrichedGatepasses = await enrichGatepasses(result.items);
-    } catch (e) {
+    } catch (e: any) {
+        if (e && e.message && e.message.includes('autocancelled')) {
+            // Ignore auto-cancelled requests
+            return;
+        }
         error = 'Failed to fetch gatepasses: ' + (e && e.message ? e.message : e);
     }
     loading = false;
 }
 
-function handleSearch(e) {
-    search = e.target.value;
+function handleSearch(e: Event) {
+    const target = e.target as HTMLInputElement;
+    search = target.value;
     page = 1;
     fetchGatepasses();
 }
 
-function gotoPage(p) {
+function gotoPage(p: number) {
     if (p >= 1 && p <= totalPages) {
         page = p;
         fetchGatepasses();
@@ -68,29 +73,259 @@ function gotoPage(p) {
 
 onMount(fetchGatepasses);
 
-async function setTimeIn(gatepass) {
+async function setTimeIn(gatepass: any) {
     const now = new Date().toISOString();
     try {
         await pb.collection('gatepasses').update(gatepass.id, { Time_in: now });
         await fetchGatepasses();
-    } catch (e) {
+    } catch (e: any) {
         error = 'Failed to update Time_in: ' + (e && e.message ? e.message : e);
     }
 }
 
-function printGatepass(gatepass) {
+function printGatepass(gatepass: any) {
     const printContent = document.getElementById(`print-gatepass-${gatepass.id}`)?.innerHTML;
-    const printWindow = window.open('', '', 'width=600,height=800');
-    if (!printWindow) return;
-    printWindow.document.write('<html><head><title>Print Gatepass</title>');
-    printWindow.document.write('<style>body{background:#fff;color:#232733;font-family:sans-serif;} .print-card{background:#f3f4f6;padding:2em;border-radius:12px;} .print-card h2{margin-top:0;} .print-card .field{margin-bottom:0.7em;} .print-card .label{font-weight:bold;display:inline-block;width:120px;} .print-card .value{display:inline-block;}</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(printContent);
-    printWindow.document.write('</body></html>');
+    const printWindow = window.open('', '', 'width=800,height=1000');
+    if (!printWindow || !printContent) return;
+    
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Gatepass - ${gatepass.id}</title>
+            <style>
+                @media print {
+                    body { margin: 0; padding: 8px; }
+                    .no-print { display: none; }
+                    .gatepass-container { padding: 16px !important; }
+                    .header { padding-bottom: 10px !important; margin-bottom: 15px !important; }
+                    .footer { margin-top: 20px !important; padding-top: 10px !important; }
+                    .signature-section { margin-top: 20px !important; padding-top: 10px !important; }
+                    .company-name { font-size: 20px !important; }
+                    .document-title { font-size: 16px !important; }
+                    .logo { width: 50px !important; height: 50px !important; }
+                    .content-grid { gap: 10px !important; }
+                    .field-label, .field-value { font-size: 12px !important; }
+                    .status-badge { font-size: 12px !important; padding: 6px 12px !important; }
+                    .signature-line { font-size: 12px !important; margin-top: 20px !important; }
+                }
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background: #fff;
+                    color: #333;
+                    margin: 0;
+                    padding: 8px;
+                    line-height: 1.3;
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 3px solid #2563eb;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
+                }
+                .logo {
+                    width: 50px;
+                    height: 50px;
+                    margin: 0 auto 10px;
+                    display: block;
+                }
+                .company-name {
+                    font-size: 20px;
+                    font-weight: bold;
+                    color: #2563eb;
+                    margin: 0;
+                    text-transform: uppercase;
+                    letter-spacing: 2px;
+                }
+                .document-title {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #333;
+                    margin: 6px 0 0 0;
+                    text-transform: uppercase;
+                }
+                .gatepass-container {
+                    max-width: 700px;
+                    margin: 0 auto;
+                    border: 2px solid #2563eb;
+                    border-radius: 10px;
+                    padding: 16px;
+                    background: #f8fafc;
+                }
+                .content-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 10px;
+                    margin-bottom: 15px;
+                }
+                .field-group {
+                    margin-bottom: 8px;
+                }
+                .field-label {
+                    font-weight: bold;
+                    color: #2563eb;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    margin-bottom: 2px;
+                    letter-spacing: 1px;
+                }
+                .field-value {
+                    font-size: 12px;
+                    color: #333;
+                    padding: 4px 8px;
+                    background: #fff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 5px;
+                    min-height: 16px;
+                }
+                .status-section {
+                    text-align: center;
+                    margin-top: 15px;
+                    padding-top: 10px;
+                    border-top: 2px solid #e2e8f0;
+                }
+                .status-badge {
+                    display: inline-block;
+                    padding: 6px 12px;
+                    border-radius: 25px;
+                    font-weight: bold;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                .status-in {
+                    background: #dcfce7;
+                    color: #166534;
+                    border: 2px solid #16a34a;
+                }
+                .status-out {
+                    background: #fef3c7;
+                    color: #92400e;
+                    border: 2px solid #eab308;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                    padding-top: 10px;
+                    border-top: 1px solid #e2e8f0;
+                    font-size: 10px;
+                    color: #666;
+                }
+                .signature-section {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    margin-top: 20px;
+                    padding-top: 10px;
+                    border-top: 2px solid #e2e8f0;
+                }
+                .signature-box {
+                    text-align: center;
+                }
+                .signature-line {
+                    border-top: 2px solid #333;
+                    margin-top: 20px;
+                    padding-top: 6px;
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+                @media (max-width: 600px) {
+                    .content-grid { grid-template-columns: 1fr; }
+                    .signature-section { grid-template-columns: 1fr; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="/NPMlogo.png" alt="New Paleah Millers Logo" class="logo">
+                <h1 class="company-name">New Paleah Millers</h1>
+                <h2 class="document-title">Gatepass</h2>
+            </div>
+            <div class="gatepass-container">
+                <div class="content-grid">
+                    <div class="field-group">
+                        <div class="field-label">Driver Name</div>
+                        <div class="field-value">${gatepass.driverName}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Vehicle Number Plate</div>
+                        <div class="field-value">${gatepass.numberPlate}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Destination</div>
+                        <div class="field-value">${gatepass.destination}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Purpose</div>
+                        <div class="field-value">${gatepass.purpose}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Customer</div>
+                        <div class="field-value">${gatepass.customer || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Product</div>
+                        <div class="field-value">${gatepass.product || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Quantity</div>
+                        <div class="field-value">${gatepass.quantity || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Price</div>
+                        <div class="field-value">${gatepass.price ? '₦' + gatepass.price : 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Invoice</div>
+                        <div class="field-value">${gatepass.invoice || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">GP Number</div>
+                        <div class="field-value">${gatepass.GP_no || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">First Weight</div>
+                        <div class="field-value">${gatepass.first_weight || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Second Weight</div>
+                        <div class="field-value">${gatepass.Second_weight || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Time Out</div>
+                        <div class="field-value">${gatepass.Time_out || 'N/A'}</div>
+                    </div>
+                    <div class="field-group">
+                        <div class="field-label">Time In</div>
+                        <div class="field-value">${gatepass.Time_in || 'Pending'}</div>
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="status-badge ${gatepass.Time_in ? 'status-in' : 'status-out'}">
+                        ${gatepass.Time_in ? 'Vehicle Returned' : 'Vehicle Out'}
+                    </div>
+                </div>
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line">Security Officer Signature</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line">Driver Signature</div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>This document is computer generated and valid without signature</p>
+                <p>New Paleah Millers - Gatepass Management System</p>
+            </div>
+        </body>
+        </html>
+    `);
     printWindow.document.close();
     printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
 }
 </script>
 
@@ -134,6 +369,12 @@ function printGatepass(gatepass) {
                         <div class="line field"><span class="label">Second Weight:</span> <span class="value">{gatepass.Second_weight}</span></div>
                         <div class="line field"><span class="label">Time Out:</span> <span class="value">{gatepass.Time_out}</span></div>
                         <div class="line field"><span class="label">Time In:</span> <span class="value">{gatepass.Time_in ? gatepass.Time_in : '—'}</span></div>
+                        <div class="line field"><span class="label">Invoice:</span> <span class="value">{gatepass.invoice}</span></div>
+                        <div class="line field"><span class="label">Product:</span> <span class="value">{gatepass.product}</span></div>
+                        <div class="line field"><span class="label">Quantity:</span> <span class="value">{gatepass.quantity}</span></div>
+                        <div class="line field"><span class="label">Price:</span> <span class="value">{gatepass.price}</span></div>
+                        <div class="line field"><span class="label">Customer:</span> <span class="value">{gatepass.customer}</span></div>
+                        <div class="line field"><span class="label">GP No:</span> <span class="value">{gatepass.GP_no}</span></div>
                     </div>
                     <div class="card-actions">
                         {#if !gatepass.Time_in}
@@ -170,10 +411,10 @@ body, .dark-bg {
 .search-bar {
     width: 100%;
     max-width: 500px;
-    padding: 0.7em 1.2em;
+    padding: 0.4em 0.8em;
     border: 1px solid #d1d5db;
     border-radius: 8px;
-    font-size: 1.1em;
+    font-size: 1em;
     background: #f9fafb;
     color: #232733;
     outline: none;
@@ -181,22 +422,23 @@ body, .dark-bg {
     box-shadow: 0 1px 4px #0001;
 }
 .gatepass-list {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.2rem;
     justify-content: flex-start;
-    align-items: flex-start;
+    align-items: stretch;
     padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 .gatepass-card {
     background: #f3f4f6;
     border-radius: 12px;
     box-shadow: 0 2px 12px #0001;
     border: 1px solid #e5e7eb;
-    min-width: 340px;
-    max-width: 520px;
     width: 100%;
-    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    max-width: 520px;
+    padding: 0.8rem 0.8rem 0.7rem 0.8rem;
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
@@ -204,6 +446,8 @@ body, .dark-bg {
     color: #232733;
     transition: box-shadow 0.2s;
     align-items: stretch;
+    height: 100%;
+    min-height: 300px;
 }
 .gatepass-card.in {
     border-left: 6px solid #16a34a;
@@ -338,12 +582,11 @@ body, .dark-bg {
 }
 @media (max-width: 900px) {
     .gatepass-list {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 1rem;
         padding: 0.5rem;
     }
     .gatepass-card {
-        min-width: unset;
         max-width: 100%;
         padding: 1rem 0.7rem 0.7rem 0.7rem;
     }
@@ -370,7 +613,6 @@ body, .dark-bg {
         padding: 0.3rem;
     }
     .gatepass-card {
-        min-width: unset;
         max-width: 100%;
         padding: 0.7rem 0.3rem 0.5rem 0.3rem;
     }

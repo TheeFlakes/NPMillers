@@ -15,7 +15,13 @@
     first_weight: '',
     Second_weight: '',
     Time_out: '',
-    Time_in: ''
+    Time_in: '',
+    invoice: '',
+    product: '',
+    quantity: '',
+    price: '',
+    customer: '',
+    GP_no: ''
   };
   let loading = false;
   let error = '';
@@ -31,8 +37,8 @@
     error = '';
     success = false;
     // Validate required fields
-    if (!form.driver_id || !form.destination || !form.Time_out || !form.purpose) {
-      error = 'Please fill all required fields: Driver, Destination, Time Out, and Purpose.';
+    if (!form.driver_id || !form.destination || !form.Time_out || !form.purpose || !form.invoice || !form.customer) {
+      error = 'Please fill all required fields: Driver, Destination, Time Out, Purpose, Invoice, and Customer.';
       loading = false;
       return;
     }
@@ -44,7 +50,13 @@
         purpose: form.purpose,
         first_weight: form.first_weight ? Number(form.first_weight) : undefined,
         Second_weight: form.Second_weight ? Number(form.Second_weight) : undefined,
-        Time_out: form.Time_out
+        Time_out: form.Time_out ? new Date(form.Time_out).toISOString() : undefined,
+        invoice: form.invoice,
+        product: form.product,
+        quantity: form.quantity ? Number(form.quantity) : undefined,
+        price: form.price ? Number(form.price) : undefined,
+        customer: form.customer,
+        GP_no: form.GP_no ? Number(form.GP_no) : undefined
       };
       console.log('Submitting gatepass data:', data);
       await createGatepass(data);
@@ -57,7 +69,13 @@
         first_weight: '',
         Second_weight: '',
         Time_out: '',
-        Time_in: ''
+        Time_in: '',
+        invoice: '',
+        product: '',
+        quantity: '',
+        price: '',
+        customer: '',
+        GP_no: ''
       };
     } catch (e: any) {
       error = e?.message || 'Failed to create gatepass.';
@@ -75,7 +93,13 @@
       first_weight: '',
       Second_weight: '',
       Time_out: '',
-      Time_in: ''
+      Time_in: '',
+      invoice: '',
+      product: '',
+      quantity: '',
+      price: '',
+      customer: '',
+      GP_no: ''
     };
     error = '';
     success = false;
@@ -294,8 +318,28 @@
           Purpose
           <textarea class="form-textarea" bind:value={form.purpose} required rows="3" placeholder="Enter purpose..."></textarea>
         </label>
+        <label class="form-label">
+          CUSTOMER
+          <input class="form-input" type="text" bind:value={form.customer} required />
+        </label>
+        <label class="form-label">
+          Price
+          <input class="form-input" type="number" bind:value={form.price} min="0" step="0.01" />
+        </label>
       </div>
       <div class="form-col">
+        <label class="form-label">
+          INVOICE
+          <input class="form-input" type="text" bind:value={form.invoice} required />
+        </label>
+        <label class="form-label">
+          Product
+          <input class="form-input" type="text" bind:value={form.product} />
+        </label>
+        <label class="form-label">
+          Quantity
+          <input class="form-input" type="number" bind:value={form.quantity} min="0" />
+        </label>
         <label class="form-label">
           First Weight
           <input class="form-input" type="number" bind:value={form.first_weight} />
@@ -303,6 +347,10 @@
         <label class="form-label">
           Second Weight
           <input class="form-input" type="number" bind:value={form.Second_weight} />
+        </label>
+        <label class="form-label">
+          GP No
+          <input class="form-input" type="number" bind:value={form.GP_no} min="1" />
         </label>
         <label class="form-label">
           Time Out
