@@ -3,4 +3,6 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "20" 
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+  ROLLUP_SKIP_NATIVE = "true" 

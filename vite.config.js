@@ -3,5 +3,13 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()]
+	plugins: [tailwindcss(), sveltekit()],
+	build: {
+		rollupOptions: {
+			external: ['@rollup/rollup-linux-x64-gnu']
+		}
+	},
+	optimizeDeps: {
+		exclude: ['@rollup/rollup-linux-x64-gnu']
+	}
 });
