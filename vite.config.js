@@ -4,15 +4,13 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
-	build: {
-		rollupOptions: {
-			external: ['@rollup/rollup-linux-x64-gnu']
-		}
-	},
 	optimizeDeps: {
-		exclude: ['@rollup/rollup-linux-x64-gnu', 'lightningcss']
+		exclude: ['lightningcss']
 	},
 	ssr: {
 		noExternal: ['lightningcss']
+	},
+	define: {
+		'process.env.LIGHTNINGCSS_SKIP_NATIVE': JSON.stringify('true')
 	}
 });
