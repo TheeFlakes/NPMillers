@@ -1,6 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
-  import { session } from '$lib/stores/session.js';
+  import { session } from '$lib/stores/session';
   import { browser } from '$app/environment';
   
   let { children } = $props();

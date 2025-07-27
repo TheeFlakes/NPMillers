@@ -1,4 +1,4 @@
-import { pb } from '$lib/stores/session.js';
+import PocketBase from 'pocketbase';
 
 // Define public routes that don't require authentication
 const publicRoutes = [
@@ -16,6 +16,7 @@ const protectedRoutes = [
 ];
 
 export async function handle({ event, resolve }) {
+  const pb = new PocketBase('https://odds.pockethost.io');
   const { url } = event;
   const pathname = url.pathname;
 

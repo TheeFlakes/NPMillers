@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pb } from '$lib/stores/session.js';
+  import { pb } from '$lib/stores/session';
   let form = { full_name: '', id_number: '', phone_number: '' };
   let loading = false;
   let error = '';

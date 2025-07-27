@@ -1,7 +1,7 @@
 <script>
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { session } from '$lib/stores/session.js';
+  import { session } from '$lib/stores/session';
   import AuthGuard from '$lib/components/AuthGuard.svelte';
   
   $: current = $page.url.pathname;

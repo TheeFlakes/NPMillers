@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from 'svelte';
-import { pb } from '$lib/stores/session.js';
+import { pb } from '$lib/stores/session';
 import { getDriverById, getVehicleById } from '../pocketbase.js';
 
 let gatepasses: any[] = [];

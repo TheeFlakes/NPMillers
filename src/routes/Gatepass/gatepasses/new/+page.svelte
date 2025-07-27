@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getDrivers, getVehicles, createGatepass } from '../../pocketbase.js';
+  import PocketBase from 'pocketbase';
 
   type Driver = { id: string; name: string; id_no: string | number; phone_no: string | number };
   type Vehicle = { id: string; vehicle_number?: string; model?: string; number_plate?: string };
 
   let drivers: Driver[] = [];
   let vehicles: Vehicle[] = [];
+  let products: any[] = [];
   let form = {
     driver_id: '',
     vehicle_id: '',
@@ -30,6 +32,18 @@
   onMount(async () => {
     drivers = await getDrivers();
     vehicles = await getVehicles();
+    // Fetch products from PocketBase
+    const pb = new PocketBase('https://odds.pockethost.io');
+    try {
+      // Fetch all products (set perPage to a high value to ensure all are fetched)
+      const result = await pb.collection('miller_products').getFullList({ perPage: 200 });
+      products = result;
+      console.log('Fetched products:', products); // Debug log
+    } catch (e) {
+      // Optionally handle error
+      products = [];
+      console.error('Error fetching products:', e); // Debug log
+    }
   });
 
   async function submit() {
@@ -107,6 +121,12 @@
 
   function maskIdNo(idNo: string | number): string {
     const str = String(idNo);
+    if (str.length <= 3) return str;
+    return str[0] + '***' + str.slice(-2);
+  }
+
+  function maskProductId(id: string | number): string {
+    const str = String(id);
     if (str.length <= 3) return str;
     return str[0] + '***' + str.slice(-2);
   }
@@ -334,7 +354,12 @@
         </label>
         <label class="form-label">
           Product
-          <input class="form-input" type="text" bind:value={form.product} />
+          <select class="form-select" bind:value={form.product} required>
+            <option value="" disabled>Select product</option>
+            {#each products as p}
+              <option value={p.id}>{p.name} ({maskProductId(p.id)})</option>
+            {/each}
+          </select>
         </label>
         <label class="form-label">
           Quantity
